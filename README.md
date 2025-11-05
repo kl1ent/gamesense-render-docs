@@ -33,7 +33,7 @@ Returns the pixel size of the given text.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
-| `font` | `string` | Font ID returned by `render.load_font` |
+| `font` | `font_data` | Font returned by `render.load_font` |
 | `text` | `string` | Text to measure |
 
 📤 **Returns:** `vec2_t(width, height)`
