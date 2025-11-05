@@ -315,6 +315,54 @@ col_t(1.00, 0.50, 0.00, 1.00)
 ```
 
 ---
+# 🧾 Module: `draw_flags`
+
+### 📘 Overview
+
+These flags are used in various rendering functions such as:
+- `render.add_rect()`
+- `render.add_rect_filled()`
+- `render.add_polyline()`
+- `render.add_polyfilled()`
+- `render.add_polyshadow()`
+
+You can combine multiple flags using bitwise OR (`bit.bor`).
+
+---
+
+### ⚙️ Flags Reference
+
+| Constant | Description |
+|-----------|--------------|
+| `draw_flags.none` | Default, no special behavior. |
+| `draw_flags.closed` | Indicates that a shape or line should be **closed** (the last point connects to the first). Used with `add_polyline()`. |
+| `draw_flags.round_corners_top_left` | Round **top-left** corner only (if rounding > 0). |
+| `draw_flags.round_corners_top_right` | Round **top-right** corner only (if rounding > 0). |
+| `draw_flags.round_corners_bottom_left` | Round **bottom-left** corner only (if rounding > 0). |
+| `draw_flags.round_corners_bottom_right` | Round **bottom-right** corner only (if rounding > 0). |
+| `draw_flags.round_corners_none` | Disable rounding on all corners, even if `rounding > 0`. |
+| `draw_flags.round_corners_top` | Round **top-left** and **top-right** corners. Equivalent to `top_left | top_right`. |
+| `draw_flags.round_corners_bottom` | Round **bottom-left** and **bottom-right** corners. |
+| `draw_flags.round_corners_left` | Round **top-left** and **bottom-left** corners. |
+| `draw_flags.round_corners_right` | Round **top-right** and **bottom-right** corners. |
+| `draw_flags.round_corners_all` | Round **all four corners**. This is the **default** rounding behavior. |
+| `draw_flags.round_corners_default` | Alias for `draw_flags.round_corners_all`. |
+| `draw_flags.round_corners_mask` | Bit mask combining all corner-related flags (useful for validation). |
+| `draw_flags.shadow_cut_out_shape_background` | Do not render the shadow shape behind the original geometry — improves blending or saves fill-rate. Used with `add_rect_shadow()` and `add_polyshadow()`. |
+
+---
+
+### 💡 Usage Examples
+
+#### ✅ Combine flags
+```lua
+local flags = bit.bor(
+    draw_flags.round_corners_top,
+    draw_flags.shadow_cut_out_shape_background
+)
+```
+
+---
 
 ## 💡 Example Usage
 
