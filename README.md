@@ -64,7 +64,7 @@ Draws a **filled rectangle**.
 | `h` | `number` | Height |
 | `color` | `col_t` | Fill color |
 | `rounding` | `number` *(optional)* | Corner rounding radius |
-| `flags` | `number` *(optional)* | ImGui draw flags |
+| `flags` | `number` *(optional)* | Draw flags |
 
 ---
 
@@ -80,7 +80,7 @@ Draws a **rectangle outline**.
 | `color` | `col_t` | Outline color |
 | `thick` | `number` *(optional)* | Line thickness (default `1`) |
 | `rounding` | `number` *(optional)* | Corner rounding (default `0`) |
-| `flags` | `number` *(optional)* | ImGui draw flags |
+| `flags` | `number` *(optional)* | Draw flags |
 
 ---
 
@@ -96,7 +96,7 @@ Applies a **blur effect** to a rectangular region.
 | `color` | `col_t` | Blur color/tint |
 | `radius` | `number` *(optional)* | Blur radius |
 | `rounding` | `number` *(optional)* | Corner rounding |
-| `flags` | `number` *(optional)* | ImGui draw flags |
+| `flags` | `number` *(optional)* | Draw flags |
 
 ---
 
@@ -113,7 +113,7 @@ Draws a **shadow** behind a rectangle.
 | `thick` | `number` *(optional)* | Blur strength |
 | `offset` | `vec2_t` *(optional)* | Shadow offset (default `vec2_t(0, 0)`) |
 | `rounding` | `number` *(optional)* | Corner rounding |
-| `flags` | `number` *(optional)* | ImGui draw flags |
+| `flags` | `number` *(optional)* | Draw flags |
 
 ---
 
@@ -164,7 +164,7 @@ Draws a **polyline** (connected line segments).
 | `points` | `table<vec2_t>` | Array of connected points |
 | `color` | `col_t` | Line color |
 | `thick` | `number` *(optional)* | Line thickness |
-| `flags` | `number` *(optional)* | ImGui draw flags |
+| `flags` | `number` *(optional)* | Draw flags |
 
 ---
 
@@ -187,7 +187,7 @@ Draws a **shadowed polygon**.
 | `color` | `col_t` | Shadow color |
 | `thick` | `number` *(optional)* | Blur amount |
 | `offset` | `vec2_t` *(optional)* | Shadow offset vector |
-| `flags` | `number` *(optional)* | ImGui draw flags |
+| `flags` | `number` *(optional)* | Draw flags |
 
 ---
 
@@ -318,13 +318,6 @@ col_t(1.00, 0.50, 0.00, 1.00)
 # 🧾 Module: `draw_flags`
 
 ### 📘 Overview
-
-These flags are used in various rendering functions such as:
-- `render.add_rect()`
-- `render.add_rect_filled()`
-- `render.add_polyline()`
-- `render.add_polyfilled()`
-- `render.add_polyshadow()`
 
 You can combine multiple flags using bitwise OR (`bit.bor`).
 
