@@ -11,7 +11,7 @@ Loads and registers a font.
 |------------|------|-------------|
 | `path` | `string` | Path to the font file |
 | `size` | `number` *(optional)* | Font size in pixels (default `12`) |
-| `flags` | `number` *(optional)* | ImGui font flags (default `0`) |
+| `flags` | `number` *(optional)* | Font flags (default `0`) |
 
 📤 **Returns:** Loaded font.
 
@@ -352,6 +352,43 @@ You can combine multiple flags using bitwise OR (`bit.bor`).
 local flags = bit.bor(
     draw_flags.round_corners_top,
     draw_flags.shadow_cut_out_shape_background
+)
+```
+
+---
+# 🧾 Module: `font_flags`
+
+### 📘 Overview
+
+Each flag corresponds to a bitmask value and can be combined using `bit.bor()`.
+
+---
+
+### ⚙️ Flags Reference
+
+| Constant | Description |
+|-----------|--------------|
+| `font_flags.no_hinting` | **Disables hinting.** Glyphs are rendered without aligning to the pixel grid, resulting in slightly blurrier text when anti-aliased. |
+| `font_flags.no_auto_hint` | **Disables FreeType’s auto-hinter.** Uses the font’s native hinter only. |
+| `font_flags.force_auto_hint` | **Forces the use of the auto-hinter** even if the font provides its own hinting instructions. |
+| `font_flags.light_hinting` | **Light hinting algorithm.** Snaps glyphs to the pixel grid only vertically (Y-axis). Produces smoother shapes and preserves spacing, similar to Microsoft ClearType or Adobe rendering. |
+| `font_flags.mono_hinting` | **Strong monochrome hinting.** Designed for pixel-perfect alignment in non-anti-aliased (monochrome) output. |
+| `font_flags.bold` | **Applies artificial emboldening** (thickens glyph strokes). Useful for styles without a dedicated bold font. |
+| `font_flags.oblique` | **Applies a slant** to the font to emulate an italic style (shearing transformation). |
+| `font_flags.monochrome` | **Disables anti-aliasing.** Produces crisp, single-color glyphs. Often combined with `mono_hinting` for best results. |
+| `font_flags.load_color` | **Enables color-layered glyphs** (such as emoji or colored icons) when supported by the font. |
+| `font_flags.bitmap` | **Enables bitmap glyph loading.** Useful for fonts that include pre-rendered bitmap characters. |
+
+---
+
+### 💡 Usage Examples
+
+#### ✅ Combine multiple flags
+```lua
+local flags = bit.bor(
+    font_flags.no_hinting,
+    font_flags.bold,
+    font_flags.load_color
 )
 ```
 
