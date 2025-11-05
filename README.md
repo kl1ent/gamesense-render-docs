@@ -4,32 +4,32 @@
 
 ### ⚙️ Functions
 
-#### 🔤 `render.load_font(path: string, size?: number, flags?: number) -> font_data`
+#### 🔤 `render.load_font(path: string, size?: number, flags?: number) -> string`
 Loads and registers a font.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
 | `path` | `string` | Path to the font file |
-| `size` | `number` *(optional)* | Font size (default `12`) |
+| `size` | `number` *(optional)* | Font size in pixels (default `12`) |
 | `flags` | `number` *(optional)* | ImGui font flags (default `0`) |
 
-📤 **Returns:** Created font.
+📤 **Returns:** Font ID string (used in `render.add_text`).
 
 ---
 
-#### 🖼️ `render.load_image(content: string) -> texture_data`
-Loads an image from either a file path or binary memory data.
+#### 🖼️ `render.load_image(content: string) -> ffi.cdata*`
+Loads an image from a file path or binary memory buffer.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
-| `content` | `string` | Path to image file or binary content |
+| `content` | `string` | File path or binary image data |
 
-📤 **Returns:** Created texture.
+📤 **Returns:** Pointer (`void*`) to the created texture.
 
 ---
 
 #### 🅰️ `render.get_text_size(font: string, text: string) -> vec2_t`
-Returns the pixel size of a given text.
+Returns the pixel size of the given text.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
@@ -41,7 +41,7 @@ Returns the pixel size of a given text.
 ---
 
 #### 🖋️ `render.add_text(font: string, text: string, x: number, y: number, color: col_t)`
-Draws text.
+Draws text at the specified screen position.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
@@ -60,8 +60,8 @@ Draws a **filled rectangle**.
 |------------|------|-------------|
 | `x` | `number` | Top-left X |
 | `y` | `number` | Top-left Y |
-| `w` | `number` | Bottom-right X |
-| `h` | `number` | Bottom-right Y |
+| `w` | `number` | Width |
+| `h` | `number` | Height |
 | `color` | `col_t` | Fill color |
 | `rounding` | `number` *(optional)* | Corner rounding radius |
 | `flags` | `number` *(optional)* | ImGui draw flags |
@@ -75,8 +75,8 @@ Draws a **rectangle outline**.
 |------------|------|-------------|
 | `x` | `number` | Top-left X |
 | `y` | `number` | Top-left Y |
-| `w` | `number` | Bottom-right X |
-| `h` | `number` | Bottom-right Y |
+| `w` | `number` | Width |
+| `h` | `number` | Height |
 | `color` | `col_t` | Outline color |
 | `thick` | `number` *(optional)* | Line thickness (default `1`) |
 | `rounding` | `number` *(optional)* | Corner rounding (default `0`) |
@@ -89,8 +89,11 @@ Applies a **blur effect** to a rectangular region.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
-| `x`, `y`, `w`, `h` | `number` | Region coordinates |
-| `color` | `col_t` | Blur tint/intensity |
+| `x` | `number` | Top-left X |
+| `y` | `number` | Top-left Y |
+| `w` | `number` | Width |
+| `h` | `number` | Height |
+| `color` | `col_t` | Blur color/tint |
 | `radius` | `number` *(optional)* | Blur radius |
 | `rounding` | `number` *(optional)* | Corner rounding |
 | `flags` | `number` *(optional)* | Draw flags |
@@ -102,17 +105,20 @@ Draws a **shadow** behind a rectangle.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
-| `x`, `y`, `w`, `h` | `number` | Rectangle coordinates |
+| `x` | `number` | Top-left X |
+| `y` | `number` | Top-left Y |
+| `w` | `number` | Width |
+| `h` | `number` | Height |
 | `color` | `col_t` | Shadow color |
-| `thick` | `number` *(optional)* | Blur amount |
-| `offset` | `vec2_t` *(optional)* | Shadow offset |
+| `thick` | `number` *(optional)* | Blur strength |
+| `offset` | `vec2_t` *(optional)* | Shadow offset (default `vec2_t(0, 0)`) |
 | `rounding` | `number` *(optional)* | Corner rounding |
 | `flags` | `number` *(optional)* | Draw flags |
 
 ---
 
 #### 🧭 `render.add_line(x: number, y: number, x1: number, y1: number, color: col_t, thick?: number)`
-Draws a line between two points.
+Draws a **line** between two points.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
@@ -126,10 +132,27 @@ Draws a line between two points.
 #### 🌀 `render.add_circle(x: number, y: number, radius: number, segments: number, color: col_t, thick?: number)`
 Draws a **circle outline**.
 
+| Parameter | Type | Description |
+|------------|------|-------------|
+| `x` | `number` | Center X |
+| `y` | `number` | Center Y |
+| `radius` | `number` | Circle radius |
+| `segments` | `number` | Number of segments for smoothness |
+| `color` | `col_t` | Line color |
+| `thick` | `number` *(optional)* | Line thickness |
+
 ---
 
 #### ⚫ `render.add_circle_filled(x: number, y: number, radius: number, segments: number, color: col_t)`
 Draws a **filled circle**.
+
+| Parameter | Type | Description |
+|------------|------|-------------|
+| `x` | `number` | Center X |
+| `y` | `number` | Center Y |
+| `radius` | `number` | Circle radius |
+| `segments` | `number` | Number of segments for smoothness |
+| `color` | `col_t` | Fill color |
 
 ---
 
@@ -138,9 +161,9 @@ Draws a **polyline** (connected line segments).
 
 | Parameter | Type | Description |
 |------------|------|-------------|
-| `points` | `table<vec2_t>` | Array of points |
+| `points` | `table<vec2_t>` | Array of connected points |
 | `color` | `col_t` | Line color |
-| `thick` | `number` *(optional)* | Thickness |
+| `thick` | `number` *(optional)* | Line thickness |
 | `flags` | `number` *(optional)* | Draw flags |
 
 ---
@@ -148,26 +171,56 @@ Draws a **polyline** (connected line segments).
 #### 🔺 `render.add_polyfilled(points: table<vec2_t>, color: col_t)`
 Draws a **filled polygon**.
 
+| Parameter | Type | Description |
+|------------|------|-------------|
+| `points` | `table<vec2_t>` | Array of polygon vertices |
+| `color` | `col_t` | Fill color |
+
 ---
 
 #### 🌑 `render.add_polyshadow(points: table<vec2_t>, color: col_t, thick?: number, offset?: vec2_t, flags?: number)`
 Draws a **shadowed polygon**.
 
+| Parameter | Type | Description |
+|------------|------|-------------|
+| `points` | `table<vec2_t>` | Polygon vertex list |
+| `color` | `col_t` | Shadow color |
+| `thick` | `number` *(optional)* | Blur amount |
+| `offset` | `vec2_t` *(optional)* | Shadow offset vector |
+| `flags` | `number` *(optional)* | Draw flags |
+
 ---
 
 #### ✂️ `render.push_clip_rect(x: number, y: number, w: number, h: number, intersect?: boolean)`
-Pushes a **clip rectangle** to limit drawing area.
+Pushes a **clip rectangle** to limit the drawing area.
+
+| Parameter | Type | Description |
+|------------|------|-------------|
+| `x` | `number` | Top-left X |
+| `y` | `number` | Top-left Y |
+| `w` | `number` | Width |
+| `h` | `number` | Height |
+| `intersect` | `boolean` *(optional)* | Whether to intersect with the previous clip rect (default `false`) |
 
 ---
 
 #### ✂️ `render.pop_clip_rect()`
-Pops the last clip rectangle from the stack.
+Removes the last pushed clipping rectangle.
+
+| Parameter | Type | Description |
+|------------|------|-------------|
+| *(none)* | – | Pops the current clip rectangle |
 
 ---
 
 #### 🔁 `render.set_callback(fn: function)`
-Registers a function that will be executed every frame during the `paint_ui` event.
+Registers a function to be executed every frame during the `paint_ui` event.
 
+| Parameter | Type | Description |
+|------------|------|-------------|
+| `fn` | `function` | Callback function to execute |
+
+📘 Example:
 ```lua
 render.set_callback(function()
     render.add_rect_filled(50, 50, 200, 100, render.col_t(0, 0.5, 1, 1), 5)
