@@ -4,7 +4,7 @@
 
 ### ⚙️ Functions
 
-#### 🔤 `render.load_font(path: string, size?: number, flags?: number) -> string`
+#### 🔤 `render.load_font(path: string, size?: number, flags?: number) -> font_data`
 Loads and registers a font.
 
 | Parameter | Type | Description |
@@ -13,18 +13,18 @@ Loads and registers a font.
 | `size` | `number` *(optional)* | Font size in pixels (default `12`) |
 | `flags` | `number` *(optional)* | ImGui font flags (default `0`) |
 
-📤 **Returns:** Font ID string (used in `render.add_text`).
+📤 **Returns:** Loaded font.
 
 ---
 
-#### 🖼️ `render.load_image(content: string) -> ffi.cdata*`
+#### 🖼️ `render.load_image(content: string) -> texture_data`
 Loads an image from a file path or binary memory buffer.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
 | `content` | `string` | File path or binary image data |
 
-📤 **Returns:** Pointer (`void*`) to the created texture.
+📤 **Returns:** Loaded texture.
 
 ---
 
@@ -80,7 +80,7 @@ Draws a **rectangle outline**.
 | `color` | `col_t` | Outline color |
 | `thick` | `number` *(optional)* | Line thickness (default `1`) |
 | `rounding` | `number` *(optional)* | Corner rounding (default `0`) |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | ImGui draw flags |
 
 ---
 
@@ -96,7 +96,7 @@ Applies a **blur effect** to a rectangular region.
 | `color` | `col_t` | Blur color/tint |
 | `radius` | `number` *(optional)* | Blur radius |
 | `rounding` | `number` *(optional)* | Corner rounding |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | ImGui draw flags |
 
 ---
 
@@ -113,7 +113,7 @@ Draws a **shadow** behind a rectangle.
 | `thick` | `number` *(optional)* | Blur strength |
 | `offset` | `vec2_t` *(optional)* | Shadow offset (default `vec2_t(0, 0)`) |
 | `rounding` | `number` *(optional)* | Corner rounding |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | ImGui draw flags |
 
 ---
 
@@ -164,7 +164,7 @@ Draws a **polyline** (connected line segments).
 | `points` | `table<vec2_t>` | Array of connected points |
 | `color` | `col_t` | Line color |
 | `thick` | `number` *(optional)* | Line thickness |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | ImGui draw flags |
 
 ---
 
@@ -187,7 +187,7 @@ Draws a **shadowed polygon**.
 | `color` | `col_t` | Shadow color |
 | `thick` | `number` *(optional)* | Blur amount |
 | `offset` | `vec2_t` *(optional)* | Shadow offset vector |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | ImGui draw flags |
 
 ---
 
@@ -214,7 +214,7 @@ Removes the last pushed clipping rectangle.
 ---
 
 #### 🔁 `render.set_callback(fn: function)`
-Registers a function to be executed every frame during the `paint_ui` event.
+Registers a function to be executed every frame.
 
 | Parameter | Type | Description |
 |------------|------|-------------|
