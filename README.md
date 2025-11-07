@@ -104,7 +104,7 @@ Draws a **rectangle outline**.
 
 ---
 
-#### 🌫️ `render.add_blur(x: number, y: number, w: number, h: number, color: col_t, radius?: number, rounding?: number, flags?: number)`
+#### 🌫️ `render.add_blur(x: number, y: number, w: number, h: number, color: col_t, rounding?: number, flags?: number)`
 Applies a **blur effect** to a rectangular region.
 
 | Parameter | Type | Description |
@@ -114,7 +114,6 @@ Applies a **blur effect** to a rectangular region.
 | `w` | `number` | Width |
 | `h` | `number` | Height |
 | `color` | `col_t` | Blur color/tint |
-| `radius` | `number` *(optional)* | Blur radius |
 | `rounding` | `number` *(optional)* | Corner rounding |
 | `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#-module-draw_flags). |
 
