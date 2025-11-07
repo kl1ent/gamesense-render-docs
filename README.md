@@ -253,7 +253,7 @@ end)
 
 ---
 
-# 🧾 Module: `vec2_t`
+## 🧾 Module: `vec2_t`
 
 ### 📘 Overview
 `vec2_t` is a lightweight **2D vector type**.  
@@ -431,7 +431,7 @@ col_t(1.00, 0.50, 0.00, 1.00)
 ```
 
 ---
-# 🧾 Module: `draw_flags`
+## 🧾 Module: `draw_flags`
 
 ### 📘 Overview
 
@@ -472,7 +472,7 @@ local flags = bit.bor(
 ```
 
 ---
-# 🧾 Module: `font_flags`
+## 🧾 Module: `font_flags`
 
 ### 📘 Overview
 
