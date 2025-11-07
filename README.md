@@ -229,51 +229,148 @@ end)
 
 ---
 
-## 📐 Module: `vec2_t`
+Отлично — вот профессионально оформленная **документация для `vec2_t`**, в стиле API-описаний (на английском, Markdown формат, идеально подходит для проекта с LuaJIT + FFI).
+
+---
+
+# 🧾 Module: `vec2_t`
 
 ### 📘 Overview
+`vec2_t` is a lightweight **2D vector type**.  
+It represents a mathematical vector with `x` and `y` components and supports standard vector arithmetic and operations via metamethods.
 
-`vec2_t` is a simple 2D vector structure used for positions, sizes, and offsets.
+This structure is often used for positions, sizes, directions, or UV coordinates in 2D rendering systems.
 
 ---
+---
 
-### 🧱 Constructor
+### ⚙️ Constructor
 
 ```lua
-local v = render.vec2_t(x, y)
+local v = vec2_t(x, y)
 ```
 
-| Parameter | Type     | Description  |
-| --------- | -------- | ------------ |
-| `x`       | `number` | X coordinate |
-| `y`       | `number` | Y coordinate |
+| Parameter | Type     | Default | Description  |
+| --------- | -------- | ------- | ------------ |
+| `x`       | `number` | `0`     | X coordinate |
+| `y`       | `number` | `0`     | Y coordinate |
 
----
-
-### ⚙️ Operators
-
-| Operator | Description            | Example        |
-| -------- | ---------------------- | -------------- |
-| `+`      | Adds two vectors       | `v3 = v1 + v2` |
-| `-`      | Subtracts two vectors  | `v3 = v1 - v2` |
-| `*`      | Multiplies by a scalar | `v2 = v1 * 2`  |
-
----
-
-### 🧩 Methods
-
-#### `v:unpack() -> number, number`
-
-Returns `x, y`.
-
-#### `tostring(v) -> string`
-
-Stringifies the vector:
+Example:
 
 ```lua
+local a = vec2_t(10, 5)
+local b = vec2_t() -- defaults to (0, 0)
+```
+
+---
+
+### ➕ Arithmetic Operations
+
+All arithmetic metamethods are overloaded to work with both **numbers** and **other `vec2_t` objects**.
+They return a **new `vec2_t` instance** (immutable behavior).
+
+#### `__add` — Vector Addition
+
+```lua
+a + b
+a + 3
+3 + a
+```
+
+* Adds either another `vec2_t` or a scalar number.
+
+#### `__sub` — Vector Subtraction
+
+```lua
+a - b
+a - 3
+3 - a
+```
+
+* Subtracts either another `vec2_t` or a scalar.
+
+#### `__mul` — Multiplication
+
+```lua
+a * b
+a * 2
+2 * a
+```
+
+* Multiplies components pairwise if both operands are vectors.
+* Multiplies both components by a scalar if one operand is numeric.
+
+#### `__div` — Division
+
+```lua
+a / b
+a / 2
+2 / a
+```
+
+* Divides component-wise if both are vectors.
+* Divides by a scalar if one operand is numeric.
+
+---
+
+### 🧰 Methods
+
+#### `vec2_t:unpack()`
+
+```lua
+local x, y = v:unpack()
+```
+
+Returns both vector components as separate values.
+
+| Returns | Type     | Description |
+| ------- | -------- | ----------- |
+| `x`     | `number` | X component |
+| `y`     | `number` | Y component |
+
+---
+
+#### `vec2_t:__tostring()`
+
+```lua
+tostring(v)
+```
+
+Converts the vector into a formatted string:
+
+```
 vec2_t(10.00, 5.00)
 ```
 
+---
+
+### 🧮 Examples
+
+#### Basic arithmetic
+
+```lua
+local a = vec2_t(10, 20)
+local b = vec2_t(5, 5)
+
+local sum = a + b        -- vec2_t(15, 25)
+local diff = a - 3       -- vec2_t(7, 17)
+local scaled = 2 * a     -- vec2_t(20, 40)
+local divided = a / b    -- vec2_t(2, 4)
+```
+
+#### Extracting values
+
+```lua
+local pos = vec2_t(128, 256)
+local x, y = pos:unpack()
+print(x, y) -- 128, 256
+```
+
+#### Printing
+
+```lua
+print(pos)  -- Output: vec2_t(128.00, 256.00)
+```
 ---
 
 ## 🎨 Module: `col_t`
