@@ -242,7 +242,6 @@ It represents a mathematical vector with `x` and `y` components and supports sta
 This structure is often used for positions, sizes, directions, or UV coordinates in 2D rendering systems.
 
 ---
----
 
 ### ⚙️ Constructor
 
