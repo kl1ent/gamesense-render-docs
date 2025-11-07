@@ -69,7 +69,7 @@ Draws a **filled rectangle** with a **4-corner gradient**, where each corner can
 | `color_down_right` | `col_t`               | Color for the **bottom-right** corner.                                |
 | `color_down_left`  | `col_t`               | Color for the **bottom-left** corner.                                 |
 | `rounding`         | `number` *(optional)* | Corner rounding (default `0`)                                               |
-| `flags`            | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
+| `flags`            | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#-module-draw_flags). |
 
 ---
 
@@ -84,7 +84,7 @@ Draws a **filled rectangle**.
 | `h` | `number` | Height |
 | `color` | `col_t` | Fill color |
 | `rounding` | `number` *(optional)* | Corner rounding radius |
-| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#-module-draw_flags). |
 
 ---
 
@@ -100,7 +100,7 @@ Draws a **rectangle outline**.
 | `color` | `col_t` | Outline color |
 | `thick` | `number` *(optional)* | Line thickness (default `1`) |
 | `rounding` | `number` *(optional)* | Corner rounding (default `0`) |
-| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#-module-draw_flags). |
 
 ---
 
@@ -116,7 +116,7 @@ Applies a **blur effect** to a rectangular region.
 | `color` | `col_t` | Blur color/tint |
 | `radius` | `number` *(optional)* | Blur radius |
 | `rounding` | `number` *(optional)* | Corner rounding |
-| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#-module-draw_flags). |
 
 ---
 
@@ -133,7 +133,7 @@ Draws a **shadow** behind a rectangle.
 | `thick` | `number` *(optional)* | Blur strength |
 | `offset` | `vec2_t` *(optional)* | Shadow offset (default `vec2_t(0, 0)`) |
 | `rounding` | `number` *(optional)* | Corner rounding |
-| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#-module-draw_flags). |
 
 ---
 
@@ -184,7 +184,7 @@ Draws a **polyline** (connected line segments).
 | `points` | `table<vec2_t>` | Array of connected points |
 | `color` | `col_t` | Line color |
 | `thick` | `number` *(optional)* | Line thickness |
-| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#-module-draw_flags). |
 
 ---
 
@@ -207,7 +207,7 @@ Draws a **shadowed polygon**.
 | `color` | `col_t` | Shadow color |
 | `thick` | `number` *(optional)* | Blur amount |
 | `offset` | `vec2_t` *(optional)* | Shadow offset vector |
-| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#-module-draw_flags). |
 
 ---
 
