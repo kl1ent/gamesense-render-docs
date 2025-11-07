@@ -360,7 +360,7 @@ local divided = a / b    -- vec2_t(2, 4)
 #### Extracting values
 
 ```lua
-local pos = vec2_t(128, 256)
+local pos = render.vec2_t(128, 256)
 local x, y = pos:unpack()
 print(x, y) -- 128, 256
 ```
