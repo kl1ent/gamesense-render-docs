@@ -53,14 +53,6 @@ Draws text at the specified screen position.
 
 ---
 
-Вот полная, профессионально оформленная документация (на английском, в Markdown стиле API-доков) для функции
-
-```lua
-render.add_rect_gradient( ... )
-```
-
----
-
 ### 🟦 `render.add_rect_gradient( x, y, w, h, color_up_right, color_up_left, color_down_right, color_down_left, rounding?, flags? )`
 
 Draws a **filled rectangle** with a **4-corner gradient**, where each corner can have a different color.  
