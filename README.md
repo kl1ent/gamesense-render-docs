@@ -246,7 +246,7 @@ This structure is often used for positions, sizes, directions, or UV coordinates
 ### ⚙️ Constructor
 
 ```lua
-local v = vec2_t(x, y)
+local v = render.vec2_t(x, y)
 ```
 
 | Parameter | Type     | Default | Description  |
@@ -257,8 +257,8 @@ local v = vec2_t(x, y)
 Example:
 
 ```lua
-local a = vec2_t(10, 5)
-local b = vec2_t() -- defaults to (0, 0)
+local a = render.vec2_t(10, 5)
+local b = render.vec2_t() -- defaults to (0, 0)
 ```
 
 ---
@@ -348,8 +348,8 @@ vec2_t(10.00, 5.00)
 #### Basic arithmetic
 
 ```lua
-local a = vec2_t(10, 20)
-local b = vec2_t(5, 5)
+local a = render.vec2_t(10, 20)
+local b = render.vec2_t(5, 5)
 
 local sum = a + b        -- vec2_t(15, 25)
 local diff = a - 3       -- vec2_t(7, 17)
