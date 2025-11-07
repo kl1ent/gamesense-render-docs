@@ -53,6 +53,35 @@ Draws text at the specified screen position.
 
 ---
 
+Вот полная, профессионально оформленная документация (на английском, в Markdown стиле API-доков) для функции
+
+```lua
+render.add_rect_gradient( ... )
+```
+
+---
+
+### 🟦 `render.add_rect_gradient( x, y, w, h, color_up_right, color_up_left, color_down_right, color_down_left, rounding?, flags? )`
+
+Draws a **filled rectangle** with a **4-corner gradient**, where each corner can have a different color.  
+This allows creating smooth multi-directional gradients and visually rich UI backgrounds.
+
+
+| Parameter          | Type                  | Description                                                           |
+| ------------------ | --------------------- | --------------------------------------------------------------------- |
+| `x`                | `number`              | Top-left X.                                                           |
+| `y`                | `number`              | Top-left Y.                                                           |
+| `w`                | `number`              | Width.                                               |
+| `h`                | `number`              | Height.                                              |
+| `color_up_right`   | `col_t`               | Color for the **top-right** corner.                                   |
+| `color_up_left`    | `col_t`               | Color for the **top-left** corner.                                    |
+| `color_down_right` | `col_t`               | Color for the **bottom-right** corner.                                |
+| `color_down_left`  | `col_t`               | Color for the **bottom-left** corner.                                 |
+| `rounding`         | `number` *(optional)* | Corner rounding (default `0`)                                               |
+| `flags`            | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
+
+---
+
 #### 🟦 `render.add_rect_filled(x: number, y: number, w: number, h: number, color: col_t, rounding?: number, flags?: number)`
 Draws a **filled rectangle**.
 
@@ -64,7 +93,7 @@ Draws a **filled rectangle**.
 | `h` | `number` | Height |
 | `color` | `col_t` | Fill color |
 | `rounding` | `number` *(optional)* | Corner rounding radius |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
 
 ---
 
@@ -80,7 +109,7 @@ Draws a **rectangle outline**.
 | `color` | `col_t` | Outline color |
 | `thick` | `number` *(optional)* | Line thickness (default `1`) |
 | `rounding` | `number` *(optional)* | Corner rounding (default `0`) |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
 
 ---
 
@@ -96,7 +125,7 @@ Applies a **blur effect** to a rectangular region.
 | `color` | `col_t` | Blur color/tint |
 | `radius` | `number` *(optional)* | Blur radius |
 | `rounding` | `number` *(optional)* | Corner rounding |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
 
 ---
 
@@ -113,7 +142,7 @@ Draws a **shadow** behind a rectangle.
 | `thick` | `number` *(optional)* | Blur strength |
 | `offset` | `vec2_t` *(optional)* | Shadow offset (default `vec2_t(0, 0)`) |
 | `rounding` | `number` *(optional)* | Corner rounding |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
 
 ---
 
@@ -164,7 +193,7 @@ Draws a **polyline** (connected line segments).
 | `points` | `table<vec2_t>` | Array of connected points |
 | `color` | `col_t` | Line color |
 | `thick` | `number` *(optional)* | Line thickness |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
 
 ---
 
@@ -187,7 +216,7 @@ Draws a **shadowed polygon**.
 | `color` | `col_t` | Shadow color |
 | `thick` | `number` *(optional)* | Blur amount |
 | `offset` | `vec2_t` *(optional)* | Shadow offset vector |
-| `flags` | `number` *(optional)* | Draw flags |
+| `flags` | `number` *(optional)* | Corner and drawing flags, typically from [`draw_flags`](#draw_flags). |
 
 ---
 
