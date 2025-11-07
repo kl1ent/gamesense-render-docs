@@ -53,7 +53,7 @@ Draws text at the specified screen position.
 
 ---
 
-### 🟦 `render.add_rect_gradient( x, y, w, h, color_up_right, color_up_left, color_down_right, color_down_left, rounding?, flags? )`
+### 🟦 `render.add_rect_gradient(x: number, y: number, w: number, h: number, color_up_right: col_t, color_up_left: col_t, color_down_right: col_t, color_down_left: col_t, rounding?: number, flags?:number)`
 
 Draws a **filled rectangle** with a **4-corner gradient**, where each corner can have a different color.  
 This allows creating smooth multi-directional gradients and visually rich UI backgrounds.
