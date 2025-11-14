@@ -305,15 +305,12 @@ local render = function( pathn, use_game )
     local get_directory = vtable_bind( 'engine.dll', 'VEngineClient014', 36, 'const char*( __thiscall* )( void* )' )
     local formated_dir = string.sub( ffi.string( get_directory( ) ), 1, -5 )
 
-    local dll_name = 'main.dll'
-    local test_path = string.format( '%s\\%s', 'C:\\Users\\klient\\Desktop\\necron\\gamesense_render\\Debug', dll_name )
-
     local path = string.format( '%s\\lua\\%s', formated_dir, dll_name )
     if pathn ~= nil then
         path = use_game and string.format( '%s\\%s', formated_dir, pathn ) or pathn
     end
 
-    local handle = libapi.load_lib( test_path )
+    local handle = libapi.load_lib( path )
 
     local update_buffer_fn = libapi.get_function( handle, 'update_buffer', 'void( __fastcall* )( uint32_t, uint32_t )' )
     local is_imgui_ready_fn = libapi.get_function( handle, 'is_imgui_ready', 'bool( __fastcall* )( uint32_t, uint32_t )' )
