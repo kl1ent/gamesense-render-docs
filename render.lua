@@ -2,26 +2,66 @@
 local ffi = require( 'ffi' )
 --@endregion
 
+--@region math
+do
+    function math.clamp( num, min, max )
+        return math.min( math.max( num, min ), max )
+    end
+end
+--@endregion
+
 --@region utils
 local utils = ( function( )
     local function print_ptr( ptr )
         print( ffi.cast( 'int64_t', ptr ) )
     end
 
+    local function assert_ptr( name, ptr )
+        if ffi.cast( 'int64_t', ptr ) == 0 then
+            error( string.format( 'invalid pointer \'%s\'', name or 'unknown' ) )
+        end
+    end
+
+    local function contains_path( text )
+        local patterns = {
+            "[A-Za-z]:\\[^%s<>:\"|%?%*]+",
+            "\\\\[^%s<>:\"|%?%*]+",
+            "[%w%._%-]+\\[%w%._%-%\\]+",
+            "/[^%s]+",
+            "%./[^%s]+",
+            "%.%./[^%s]+",
+            "[%w%._%-]+/[%w%._%-%/]+"
+        }
+
+        for _, pat in ipairs( patterns ) do
+            if string.match( text, pat ) then
+                return true
+            end
+        end
+
+        return false
+    end
+
     return {
-        print_ptr = print_ptr
+        print_ptr = print_ptr,
+        assert_ptr = assert_ptr,
+        contains_path = contains_path
     }
 end )( )
 --@endregion
 
 --@region libapi
 local libapi = ( function( )
-    local jmp_ecx = client.find_signature('engine.dll', '\xFF\xE1')
+    local jmp_ecx = client.find_signature('engine.dll', '\xFF\xE1'); utils.assert_ptr('jmp_ecx', jmp_ecx)
 
-    local get_module_handle_ptr = ffi.cast( 'uint32_t**', ffi.cast( 'uint32_t', client.find_signature( 'engine.dll', '\xFF\x15\xCC\xCC\xCC\xCC\x85\xC0\x74\x0B' ) ) + 2 )[0][0]
+    local get_module_handle_sig = client.find_signature( 'engine.dll', '\xFF\x15\xCC\xCC\xCC\xCC\x85\xC0\x74\x0B' ); utils.assert_ptr('get_module_handle_sig', get_module_handle_sig)
+    local get_module_handle_ptr_ptr = ffi.cast( 'uint32_t**', ffi.cast( 'uint32_t', get_module_handle_sig ) + 2 ); utils.assert_ptr( 'get_module_handle_ptr_ptr', get_module_handle_ptr_ptr )
+    local get_module_handle_ptr = get_module_handle_ptr_ptr[0][0]; utils.assert_ptr( 'get_module_handle_ptr', get_module_handle_ptr )
     local get_module_handle_fn = ffi.cast( 'uint32_t( __fastcall* )( unsigned int, unsigned int, const char* )', jmp_ecx )
 
-    local get_proc_address_ptr = ffi.cast( 'uint32_t**', ffi.cast( 'uint32_t', client.find_signature( 'engine.dll', '\xFF\x15\xCC\xCC\xCC\xCC\xA3\xCC\xCC\xCC\xCC\xEB\x05' ) ) + 2 )[0][0]
+    local get_proc_address_sig = client.find_signature( 'engine.dll', '\xFF\x15\xCC\xCC\xCC\xCC\xA3\xCC\xCC\xCC\xCC\xEB\x05' ); utils.assert_ptr( 'get_proc_address_sig', get_proc_address_sig )
+    local get_proc_address_ptr_ptr = ffi.cast( 'uint32_t**', ffi.cast( 'uint32_t', get_proc_address_sig ) + 2 ); utils.assert_ptr( 'get_proc_address_ptr_ptr', get_proc_address_ptr_ptr )
+    local get_proc_address_ptr = get_proc_address_ptr_ptr[0][0]; utils.assert_ptr( 'get_proc_address_ptr', get_proc_address_ptr )
     local get_proc_address_fn = ffi.cast( 'uint32_t(__fastcall*)(unsigned int, unsigned int, uint32_t, const char*)', jmp_ecx )
 
     local function get_module_handle( name )
@@ -35,148 +75,149 @@ local libapi = ( function( )
     local function get_function( module, func_name, typestring )
         local c_type = ffi.typeof( typestring )
 
-        return function( ... ) 
+        return function( ... )
             return ffi.cast( c_type, jmp_ecx )(
                 get_proc_address( ffi.cast( 'uint32_t', module ), func_name ),
-                0, 
-                ... 
-            ) 
-        end 
+                0,
+                ...
+            )
+        end
     end
 
     return {
         get_module_handle = get_module_handle,
         get_proc_address = get_proc_address,
         get_function = get_function,
-        
+
         load_lib = get_function( get_module_handle( 'kernel32.dll' ), 'LoadLibraryA', 'void*( __fastcall* )( uint32_t, uint32_t, const char* )' ),
         free_lib = get_function( get_module_handle( 'kernel32.dll' ), 'FreeLibrary', 'bool( __fastcall* )( uint32_t, uint32_t, void* )' ),
     }
 end )( )
 --@endregion
 
---@region font_manager
-local font_manager = ( function( )
-    local fonts_stack = {}
-    
-    local function create_font( font_fn, path, size, flags )
-        local id = string.format( '%s; %d; %d', path, size, flags )
-        if fonts_stack[ id ] == nil then
-            fonts_stack[ id ] = {
-                path = path,
-                size = size,
-                flags = flags,
-
-                data = nil,
-                font_fn = font_fn,
-
-                ready = false
-            }
-        end
-        return id
-    end
-
-    local function get_font( id )
-        local font = fonts_stack[ id ]
-        return font
-    end
-
-    local function handle_fonts( )
-        for key, value in pairs( fonts_stack ) do
-            if not value.ready then
-                value.data = value.font_fn( value.path, value.size, value.flags )
-                value.ready = true
-            end
-        end
-    end
-
-    return {
-        create_font = create_font,
-        get_font = get_font,
-        handle_fonts = handle_fonts
-    }
-end )( )    
---@endregion
-
 --@region vec2_t
 local vec2_t = ( function( )
     ffi.cdef [[
-        typedef struct { 
-            float x, y; 
-        } vec2_t;
+    typedef struct { 
+        float x, y; 
+    } vec2_t;
     ]]
 
-    local vec2_t
-
-    vec2_t = ffi.metatype( 'vec2_t', {
+    local vec2_ct = ffi.typeof( 'vec2_t' )
+    local vec2_t = ffi.metatype( vec2_ct, {
         __call = function( self, x, y )
-            return vec2_t( x, y )
-        end,
-
-        __new = function( ct, x, y )
-            return ffi.new( ct, { x or 0, y or 0 } )
+            return vec2_ct( x or 0, y or 0 )
         end,
 
         __add = function( a, b )
             if type(b) == 'number' then
-                return vec2_t( a.x + b, a.y + b )
+                return vec2_ct( a.x + b, a.y + b )
             elseif type( a ) == 'number' then
-                return vec2_t( a + b.x, a + b.y )
+                return vec2_ct( a + b.x, a + b.y )
             else
-                return vec2_t( a.x + b.x, a.y + b.y )
+                return vec2_ct( a.x + b.x, a.y + b.y )
             end
         end,
 
         __sub = function( a, b )
             if type( b ) == 'number' then
-                return vec2_t( a.x - b, a.y - b )
+                return vec2_ct( a.x - b, a.y - b )
             elseif type( a ) == 'number' then
-                return vec2_t( a - b.x, a - b.y )
+                return vec2_ct( a - b.x, a - b.y )
             else
-                return vec2_t( a.x - b.x, a.y - b.y )
+                return vec2_ct( a.x - b.x, a.y - b.y )
             end
         end,
 
         __mul = function( a, b )
             if type( b ) == 'number' then
-                return vec2_t( a.x * b, a.y * b )
+                return vec2_ct( a.x * b, a.y * b )
             elseif type( a ) == 'number' then
-                return vec2_t( a * b.x, a * b.y )
+                return vec2_ct( a * b.x, a * b.y )
             else
-                return vec2_t( a.x * b.x, a.y * b.y )
+                return vec2_ct( a.x * b.x, a.y * b.y )
             end
         end,
 
         __div = function( a, b )
             if type( b ) == 'number' then
-                return vec2_t( a.x / b, a.y / b )
+                return vec2_ct( a.x / b, a.y / b )
             elseif type( a ) == 'number' then
-                return vec2_t( a / b.x, a / b.y )
+                return vec2_ct( a / b.x, a / b.y )
             else
-                return vec2_t( a.x / b.x, a.y / b.y )
+                return vec2_ct( a.x / b.x, a.y / b.y )
             end
+        end,
+
+        __tostring = function( self )
+            return string.format( 'vec2_t(%.2f, %.2f)', self.x, self.y )
         end,
 
         __index = {
             __type = 'vec2_t',
 
             clone = function( self )
-                return vec2_t( self.x, self.y )
+                return vec2_ct( self.x, self.y )
             end,
 
             unpack = function( self )
                 return self.x, self.y
+            end,
+            
+            floor = function( self )
+                return vec2_ct( math.floor( self.x ), math.floor( self.y ) )
             end,
 
             length2d = function( self )
                 return math.sqrt( self.x * self.x + self.y * self.y )
             end,
 
+            length2d_sqr = function( self )
+                return self.x * self.x + self.y * self.y
+            end,
+
+            normalize = function( self )
+                local l = math.sqrt( self.x * self.x + self.y * self.y )
+                if l < 1e-6 then
+                    return vec2_ct( 0, 0 )
+                end
+                return vec2_ct( self.x / l, self.y / l )
+            end,
+
+            dot = function( self, v )
+                return self.x * v.x + self.y * v.y
+            end,
+
+            cross = function( self, v )
+                return self.x * v.y - self.y * v.x
+            end,
+
+            distance = function( self, v )
+                local dx = self.x - v.x
+                local dy = self.y - v.y
+                return math.sqrt( dx * dx + dy * dy )
+            end,
+
+            distance_sqr = function( self, v )
+                local dx = self.x - v.x
+                local dy = self.y - v.y
+                return dx * dx + dy * dy
+            end,
+
+            perp = function( self )
+                return vec2_ct( -self.y, self.x )
+            end,
+
+            is_zero = function( self, eps )
+                eps = eps or 1e-6
+                return math.abs( self.x ) < eps and math.abs( self.y ) < eps
+            end,
+
             tostring = function( self )
                 return string.format( 'vec2_t(%.2f, %.2f)', self.x, self.y )
             end,
         },
-    })
+    } )
 
     return vec2_t
 end )( )
@@ -185,9 +226,9 @@ end )( )
 --@region col_t
 local col_t = ( function( )
     ffi.cdef [[
-        typedef struct {
-            float r, g, b, a;
-        } col_t;
+    typedef struct {
+        float r, g, b, a;
+    } col_t;
     ]]
 
     local function hex_to_rgb( hex )
@@ -204,10 +245,10 @@ local col_t = ( function( )
         return math.abs( b - c ) < ( min or 0.002 ) and b or c
     end
 
-    local col_t
-    col_t = ffi.metatype( 'col_t', {
+    local col_ct = ffi.typeof( 'col_t' )
+    local col_t = ffi.metatype( col_ct, {
         __call = function( self, r, g, b, a )
-            return col_t( r, g, b, a )
+            return col_ct( r, g, b, a )
         end,
 
         __new = function( ct, r, g, b, a )
@@ -231,8 +272,12 @@ local col_t = ( function( )
                 return string.format( 'col_t(%.2f, %.2f, %.2f, %.2f)', self.r, self.g, self.b, self.a )
             end,
 
+            brightness = function( self )
+                return math.max( self.r, math.max( self.g, self.b ) )
+            end,
+
             clone = function( self )
-                return col_t( self.r, self.g, self.b, self.a )
+                return col_ct( self.r, self.g, self.b, self.a )
             end,
 
             unpack = function( self )
@@ -240,12 +285,12 @@ local col_t = ( function( )
             end,
             
             fraction = function( self )
-                return col_t( self.r / 255, self.g / 255, self.b / 255, self.a / 255 )
+                return col_ct( self.r / 255, self.g / 255, self.b / 255, self.a / 255 )
             end,
 
             alpha = function( self, factor )
                 local new_a = math.max( 0, math.min( 1, self.a * factor ) )
-                return col_t( self.r, self.g, self.b, new_a )
+                return col_ct( self.r, self.g, self.b, new_a )
             end,
 
             hex = function( self )
@@ -258,7 +303,7 @@ local col_t = ( function( )
                 local b = lerp_fn( self.b, other.b, weight )
                 local a = lerp_fn( self.a, other.a, weight )
 
-                return col_t( r, g, b, a )
+                return col_ct( r, g, b, a )
             end
         }
     } )
@@ -300,223 +345,536 @@ local font_flags = {
 }
 --@endregion
 
+--@region font_manager
+local font_manager = ( function( )
+    local font_c = {}
+    font_c.__index = font_c
+    
+    function font_c:get_size( )
+        return self.size
+    end
+
+    function font_c:get_data( )
+        return self.data
+    end
+
+    local function create_font( font_fn, path, size, flags )
+        local data = font_fn( path, size, flags )
+
+        local font = setmetatable( {
+            data = data,
+            path = path,
+            size = size,
+            flags = flags
+        }, font_c )
+
+        return font
+    end
+
+    return {
+        create_font = create_font
+    }
+end )( )    
+--@endregion
+
 --@region render
-local render = function( pathn, use_game )
+local render_impl = function( pathn, use_game )
+    ffi.cdef [[
+    typedef struct IDirect3DTexture9 IDirect3DTexture9;
+
+    typedef struct { 
+        unsigned int width, height;
+        IDirect3DTexture9* texture;
+    } img_object_t;
+    ]]
+
     local get_directory = vtable_bind( 'engine.dll', 'VEngineClient014', 36, 'const char*( __thiscall* )( void* )' )
     local formated_dir = string.sub( ffi.string( get_directory( ) ), 1, -5 )
 
-    local path = string.format( '%s\\lua\\%s', formated_dir, dll_name )
+    local path = string.format( '%s\\lua\\%s', formated_dir, 'render.dll' )
     if pathn ~= nil then
         path = use_game and string.format( '%s\\%s', formated_dir, pathn ) or pathn
     end
+    
+    local status, handle = pcall( libapi.load_lib, path )
+    if ffi.cast( 'int64_t', handle ) == 0 or not status then
+        error( tostring( ffi.cast( 'int64_t', handle ) ), 1 )
+    end
 
-    local handle = libapi.load_lib( path )
-
+    local is_render_init_fn = libapi.get_function( handle, 'is_render_init', 'bool( __fastcall* )( uint32_t, uint32_t )' )
     local update_buffer_fn = libapi.get_function( handle, 'update_buffer', 'void( __fastcall* )( uint32_t, uint32_t )' )
-    local is_imgui_ready_fn = libapi.get_function( handle, 'is_imgui_ready', 'bool( __fastcall* )( uint32_t, uint32_t )' )
 
-    local create_font_fn = libapi.get_function( handle, 'create_font', 'void*( __fastcall* )( uint32_t, uint32_t, const char*, float, unsigned int )' )
-    local create_texture_from_memory_fn = libapi.get_function( handle, 'create_texture_from_memory', 'void*( __fastcall* )( uint32_t, uint32_t, const char*, int )' )
-    local create_texture_from_file_fn = libapi.get_function( handle, 'create_texture_from_file', 'void*( __fastcall* )( uint32_t, uint32_t, const char* )' )
+    local push_mask_fn = libapi.get_function( handle, 'push_mask', 'void( __fastcall* )( uint32_t, uint32_t, bool, float )' )
+    local pop_mask_fn = libapi.get_function( handle, 'pop_mask', 'void( __fastcall* )( uint32_t, uint32_t )' )
+    local begin_mask_content_fn = libapi.get_function( handle, 'begin_mask_content', 'void( __fastcall* )( uint32_t, uint32_t )' )
 
-    local get_text_size_fn = libapi.get_function( handle, 'get_text_size', 'float( __fastcall* )( uint32_t, uint32_t, vec2_t*, void*, float, const char* )' )
+    local push_blur_fn = libapi.get_function( handle, 'push_blur', 'void( __fastcall* )( uint32_t, uint32_t, col_t )' )
+    local pop_blur_fn = libapi.get_function( handle, 'pop_blur', 'void( __fastcall* )( uint32_t, uint32_t )' )
 
-    local add_polyline_fn = libapi.get_function( handle, 'add_polyline', 'void( __fastcall* )( uint32_t, uint32_t, const vec2_t*, int, col_t, unsigned int, float )' )
-    local add_polyfilled_fn = libapi.get_function( handle, 'add_polyfilled', 'void( __fastcall* )( uint32_t, uint32_t, const vec2_t*, int, col_t )' )
-    local add_polyshadow_fn = libapi.get_function( handle, 'add_polyshadow', 'void( __fastcall* )( uint32_t, uint32_t, const vec2_t*, int, col_t, float, vec2_t, unsigned int )' )
-    local add_blur_fn = libapi.get_function( handle, 'add_blur', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, float, col_t, float, unsigned int )' )
-    local add_rect_filled_fn = libapi.get_function( handle, 'add_rect_filled', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, float, col_t, float, unsigned int )' )
-    local add_rect_fn = libapi.get_function( handle, 'add_rect', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, float, col_t, float, unsigned int, float )' )
-    local add_rect_shadow_fn = libapi.get_function( handle, 'add_rect_shadow', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, float, col_t, float, vec2_t, float, unsigned int )' )
-    local add_rect_gradient_fn = libapi.get_function( handle, 'add_rect_gradient', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, float, col_t, col_t, col_t, col_t, float, unsigned int )' )
-    local add_image_fn = libapi.get_function( handle, 'add_image', 'void( __fastcall* )( uint32_t, uint32_t, void*, float, float, float, float, col_t, float, unsigned int )' )
-    local add_text_fn = libapi.get_function( handle, 'add_text', 'void( __fastcall* )( uint32_t, uint32_t, void*, const char*, float, float, col_t )' )
-    local add_line_fn = libapi.get_function( handle, 'add_line', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, float, col_t, float )' )
-    local add_circle_fn = libapi.get_function( handle, 'add_circle', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, int, col_t, float )' )
-    local add_circle_filled_fn = libapi.get_function( handle, 'add_circle_filled', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, int, col_t )' )
-    local add_circle_shadow_fn = libapi.get_function( handle, 'add_circle_shadow', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, int, col_t, float, vec2_t, unsigned int )' )
+    local poly_fn = libapi.get_function( handle, 'poly', 'void( __fastcall* )( uint32_t, uint32_t, const vec2_t*, int, col_t )' )
+    local poly_line_fn = libapi.get_function( handle, 'poly_line', 'void( __fastcall* )( uint32_t, uint32_t, const vec2_t*, int, col_t, float, unsigned int )' )
+    local poly_shadow_fn = libapi.get_function( handle, 'poly_shadow', 'void( __fastcall* )( uint32_t, uint32_t, const vec2_t*, int, col_t, float, vec2_t, unsigned int )' )
 
-    local push_clip_rect_fn = libapi.get_function( handle, 'push_clip_rect', 'void( __fastcall* )( uint32_t, uint32_t, float, float, float, float, bool )' )
-    local pop_clip_rect_fn = libapi.get_function( handle, 'pop_clip_rect', 'void( __fastcall* )( uint32_t, uint32_t )' )
+    local circle_fn = libapi.get_function( handle, 'circle', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t, col_t, float, int )' )
+    local circle_outline_fn = libapi.get_function( handle, 'circle_outline', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t, col_t, float, float, int )' )
+    local circle_shadow_fn = libapi.get_function( handle, 'circle_shadow', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t, col_t, float, float, vec2_t, unsigned int, int )' )
+    local circle_gradient_fn = libapi.get_function( handle, 'circle_gradient', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t, col_t, col_t, float )' )
 
-    local push_rotation_fn = libapi.get_function( handle, 'push_rotation', 'void( __fastcall* )( uint32_t, uint32_t, float )' )
-    local pop_rotation_fn = libapi.get_function( handle, 'pop_rotation', 'void( __fastcall* )( uint32_t, uint32_t )' )
+    local rect_fn = libapi.get_function( handle, 'rect', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t, vec2_t, col_t, float, unsigned int )' )
+    local rect_outline_fn = libapi.get_function( handle, 'rect_outline', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t, vec2_t, col_t, float, float, unsigned int )' )
+    local rect_shadow_fn = libapi.get_function( handle, 'rect_shadow', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t, vec2_t, col_t, float, vec2_t, float, unsigned int )' )
+    local gradient_fn = libapi.get_function( handle, 'gradient', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t, vec2_t, col_t, col_t, col_t, col_t, float, unsigned int )' ) 
 
-    local callbacks = {}
+    local texture_fn = libapi.get_function( handle, 'texture', 'void( __fastcall* )( uint32_t, uint32_t, img_object_t, vec2_t, vec2_t, col_t, float, unsigned int )' )
+    local load_texture_svg_fn = libapi.get_function( handle, 'load_texture_svg', 'img_object_t( __fastcall* )( uint32_t, uint32_t, const char*, const float )' )
+    local load_texture_file_fn = libapi.get_function( handle, 'load_texture_file', 'img_object_t( __fastcall* )( uint32_t, uint32_t, const char* )' )
+    local load_texture_memory_fn = libapi.get_function( handle, 'load_texture_memory', 'img_object_t( __fastcall* )( uint32_t, uint32_t, const char*, int )' )
 
-    local function load_font( path, size, flags )
-        return font_manager.create_font( create_font_fn, path, size or 12, flags or 0 )
-    end
+    local load_font_file_fn = libapi.get_function( handle, 'load_font_file', 'void*( __fastcall* )( uint32_t, uint32_t, const char*, float, unsigned int )' )
+    local measure_text_fn = libapi.get_function( handle, 'measure_text', 'void( __fastcall* )( uint32_t, uint32_t, vec2_t*, void*, float, const char* )' )
+    local text_fn = libapi.get_function( handle, 'text', 'const char*( __fastcall* )( uint32_t, uint32_t, void*, vec2_t, col_t, const char* )' )
 
-    local function load_image( content )
-        if string.find( content, '[^%g%s]' ) then
-            return create_texture_from_memory_fn( content, #content )
+    local get_windows_directory_fn = libapi.get_function( libapi.get_module_handle( 'kernel32.dll' ), 'GetWindowsDirectoryA', 'unsigned int( __fastcall* )( uint32_t, uint32_t, char*, unsigned int )' )
+
+    local MAX_PATH = 260
+    local function get_fonts_path( )
+        local buf = ffi.new( 'char[?]', MAX_PATH )
+
+        local len = get_windows_directory_fn( buf, MAX_PATH )
+        if len == 0 then
+            return ''
         end
 
-        return create_texture_from_file_fn( content )
+        local win_dir = ffi.string( buf, len )
+        return win_dir .. '\\Fonts\\'
     end
 
-    local function get_text_size( font, text )
-        local font = font_manager.get_font( font )
-        local size = ffi.new( 'vec2_t[ 1 ]' )
-
-        get_text_size_fn( size, font.data, font.size, text )
-
-        return size[ 0 ]
-    end
-
-    local function push_rotation( deg )
-        push_rotation_fn( deg )
-    end
-
-    local function pop_rotation( )
-        pop_rotation_fn( )
-    end
-
-    local function push_clip_rect( x, y, w, h, intersect )
-        local nintersect = false
-        if intersect ~= nil then
-            nintersect = intersect
+    local function centroid( pts, count )
+        local c = vec2_t( 0, 0 )
+        for i = 1, count do
+            c = c + pts[i]
         end
-        push_clip_rect_fn( x, y, w, h, nintersect )
+        return c / count
     end
 
-    local function pop_clip_rect( )
-        pop_clip_rect_fn( )
-    end
+    local function rounded_points( pts, r, arc_segments )
+        local count = #pts
+        local out = {}
 
-    local function add_image( texture, x, y, w, h, color, rounding, flags )
-        add_image_fn( texture, x, y, w, h, color, rounding or 0, flags or 0 )
-    end
-
-    local function add_polyline( points, color, thick, flags )
-        local formated_points = ffi.new( 'vec2_t[?]', #points, points )
-        add_polyline_fn( formated_points, #points, color, flags or 0, thick or 1 )
-    end
-
-    local function add_polyfilled( points, color )
-        local formated_points = ffi.new( 'vec2_t[?]', #points, points )
-        add_polyfilled_fn( formated_points, #points, color )
-    end
-
-    local function add_polyshadow( points, color, thick, offset, flags )
-        local formated_points = ffi.new( 'vec2_t[?]', #points, points )
-        add_polyshadow_fn( formated_points, #points, color, thick or 10, offset or vec2_t( 0, 0 ), flags or 0 )
-    end
-
-    local function add_rect_filled( x, y, w, h, color, rounding, flags )
-        add_rect_filled_fn( x, y, w, h, color, rounding or 0, flags or 0 )
-    end
-
-    local function add_rect_gradient( x, y, w, h, color_up_right, color_up_left, color_down_right, color_down_left, rounding, flags )
-        add_rect_gradient_fn( x, y, w, h, color_up_right, color_up_left, color_down_right, color_down_left, rounding or 0, flags or 0 )
-    end
-
-    local function add_rect( x, y, w, h, color, thick, rounding, flags )
-        add_rect_fn( x, y, w, h, color, rounding or 0, flags or 0, thick or 1 )
-    end
-
-    local function add_rect_shadow( x, y, w, h, color, thick, offset, rounding, flags )
-        add_rect_shadow_fn( x, y, w, h, color, thick or 10, offset or vec2_t( 0, 0 ), rounding or 0, flags or 0 )
-    end
-
-    local function add_blur( x, y, w, h, color, rounding, flags )
-        add_blur_fn( x, y, w, h, color, rounding or 0, flags or 0 )
-    end
-
-    local function add_line( x, y, x1, y1, color, thick )
-        add_line_fn( x, y, x1, y1, color, thick or 1 )
-    end
-
-    local function add_circle( x, y, radius, segments, color, thick )
-        add_circle_fn( x, y, radius, segments, color, thick or 1 )
-    end
-
-    local function add_circle_filled( x, y, radius, segments, color )
-        add_circle_filled_fn( x, y, radius, segments, color )
-    end
-
-    local function add_circle_shadow( x, y, radius, segments, color, thick, offset, flags )
-        add_circle_shadow_fn( x, y, radius, segments, color, thick or 10, offset or vec2_t( 0, 0 ), flags or 0 )
-    end
-
-    local function add_text( font, text, x, y, color )
-        if not font then
-            return
+        if not pts or count < 3 or r <= 0 then
+            for i = 1, count do
+                out[#out+1] = pts[i]
+            end
+            return out
         end
 
-        add_text_fn( font_manager.get_font( font ).data, text, x, y, color )
-    end
+        arc_segments = arc_segments or 8
+        if arc_segments < 3 then arc_segments = 3 end
 
-    local function set_callback( fn )
-        callbacks[ #callbacks + 1 ] = fn
-    end
+        local CEN = centroid( pts, count )
 
-    client.set_event_callback( 'paint_ui', function( )
-        if not is_imgui_ready_fn( ) then
-            return
-        end
+        for i = 1, count do
+            local A = pts[i == 1 and count or i - 1]
+            local B = pts[i]
+            local C = pts[i == count and 1 or i + 1]
 
-        if #callbacks == 0 then
-            return
-        end
+            local v1 = ( A - B ):normalize( )
+            local v2 = ( C - B ):normalize( )
 
-        font_manager.handle_fonts( )
+            local cos_th = math.clamp( v1:dot( v2 ), -1.0, 1.0 )
+            local theta = math.acos( cos_th )
 
-        for i = 1, #callbacks do
-            local callback = callbacks[ i ]
-            local status, msg = pcall( callback )
-            if not status then
-                print( msg )
+            if theta < 1e-4 then
+                out[#out + 1] = B
+            else
+                local t = r / math.tan( theta * 0.5 )
+
+                local len1 = B:distance( A )
+                local len2 = B:distance( C )
+                local max_t = math.min( len1, len2 ) * 0.5
+                if t > max_t then t = max_t end
+
+                local P = B + v1 * t
+                local Q = B + v2 * t
+
+                local bis = ( v1 + v2 ):normalize( )
+                if bis:is_zero( ) then
+                    out[#out + 1] = B
+                else
+                    local to_center = ( CEN - B ):normalize( )
+                    if bis:dot( to_center ) < 0 then
+                        bis = bis * -1
+                    end
+
+                    local sin_half = math.sin( theta * 0.5 )
+                    if sin_half < 1e-6 then
+                        out[#out + 1] = B
+                    else
+                        local h = r / sin_half
+                        local O = B + bis * h
+
+                        local angP = math.atan2( P.y - O.y, P.x - O.x )
+                        local angQ = math.atan2( Q.y - O.y, Q.x - O.x )
+
+                        local d = angQ - angP
+                        while d > math.pi do d = d - 2 * math.pi end
+                        while d < -math.pi do d = d + 2 * math.pi end
+
+                        out[#out + 1] = P
+                        for s = 1, arc_segments - 1 do
+                            local a = angP + d * ( s / arc_segments )
+                            out[#out+1] = vec2_t( O.x + math.cos( a ) * r, O.y + math.sin( a ) * r )
+                        end
+                        out[#out + 1] = Q
+                    end
+                end
             end
         end
 
-        update_buffer_fn( )
-    end )
+        return out
+    end
 
-    local function shutdown( ) 
+    local function push_mask( inverted, alpha )
+        inverted = inverted ~= nil and inverted or false
+        alpha = alpha or 1
+
+        push_mask_fn( inverted, alpha )
+    end
+
+    local function load_texture_svg( path, scale )
+        scale = scale or 1
+
+        local content = path
+        if utils.contains_path( path ) then
+            content = readfile( path )
+        end
+        return load_texture_svg_fn( path, scale )
+    end
+
+    local function load_texture_file( path )
+        return load_texture_file_fn( path )
+    end
+
+    local function load_texture_memory( content )
+        return load_texture_memory_fn( content, #content )
+    end
+
+    local function load_font( path, size, flags )
+        size = size or 12
+        flags = flags or 0
+
+        local npath = string.format( '%s%s', get_fonts_path( ), path )
+        if utils.contains_path( path ) then
+            npath = path
+        end
+        return font_manager.create_font( load_font_file_fn, npath, size, flags )
+    end
+
+    local function parse_colored_text( text, default_color )
+        local segments = {}
+        local current_color = default_color
+        local current_text = ''
+        
+        local function add_segment( )
+            if current_text ~= '' then
+                segments[#segments + 1] = {
+                    text = current_text,
+                    color = current_color
+                }
+                current_text = ''
+            end
+        end
+        
+        local i = 1
+        local len = #text
+        
+        while i <= len do
+            local char = text:sub( i, i )
+            
+            if char == '\a' then
+                add_segment( )
+                
+                local after = text:sub( i + 1 )
+
+                if after:sub( 1, 7 ) == 'DEFAULT' then
+                    current_color = default_color
+                    i = i + 8
+                else
+                    local hex8 = after:match( '^(%x%x%x%x%x%x%x%x)' )
+                    if hex8 then
+                        current_color = col_t( hex8 )
+                        i = i + 9
+                    else
+                        local hex6 = after:match( '^(%x%x%x%x%x%x)' )
+                        if hex6 then
+                            current_color = col_t( hex6 .. 'FF', default_color.a )
+                            i = i + 7
+                        else
+                            i = i + 1
+                        end
+                    end
+                end
+            elseif char == '\r' then
+                add_segment( )
+                current_color = default_color
+                i = i + 1
+            else
+                current_text = current_text .. char
+                i = i + 1
+            end
+        end
+
+        add_segment( )
+        
+        return segments
+    end
+
+    local function strip_color_codes( text )
+        local result = text
+        result = result:gsub( '\aDEFAULT', '' )
+        result = result:gsub( '\a%x%x%x%x%x%x%x%x', '' )
+        result = result:gsub( '\a%x%x%x%x%x%x', '' )
+        result = result:gsub( '\a.?', '' )
+        result = result:gsub( '\r', '' )
+        return result
+    end
+
+    local function measure_text( font, text )
+        if not font or not font.data then 
+            return 
+        end
+
+        local clean_text = strip_color_codes( text )
+
+        local size = ffi.new( 'vec2_t[1]' )
+        measure_text_fn( size, font.data, font.size, clean_text )
+        return size[0]
+    end
+
+    local function text( font, pos, color, flags, text_str )
+        if not text_str or text_str == '' then 
+            return 
+        end
+        
+        flags = flags or ''
+
+        if not font or not font.data then 
+            return 
+        end
+
+        local has_outline = flags:find( 'o' ) ~= nil
+        local has_shadow = flags:find( 's' ) ~= nil
+        local has_center = flags:find( 'c' ) ~= nil
+        
+        if has_center then
+            local text_size = measure_text( font, text_str )
+            pos = pos - vec2_t( text_size.x / 2, 0 )
+        end
+
+        local segments = parse_colored_text( text_str, color )
+        
+        if #segments == 0 then return end
+        
+        local current_x = pos.x
+        
+        for i = 1, #segments do
+            local segment = segments[ i ]
+            
+            if segment.text ~= "" then
+                local segment_pos = vec2_t( current_x, pos.y )
+                
+                local segment_alpha = segment.color.a
+                local outline_color = col_t( 0, 0, 0, segment_alpha )
+                local shadow_color = col_t( 0, 0, 0, segment_alpha )
+                
+                if has_shadow then
+                    text_fn( font.data, segment_pos + 1, shadow_color, segment.text )
+                end
+
+                if has_outline then
+                    for ox = -1, 1 do
+                        for oy = -1, 1 do
+                            if ox ~= 0 or oy ~= 0 then
+                                text_fn( font.data, segment_pos + vec2_t( ox, oy ), outline_color, segment.text )
+                            end
+                        end
+                    end
+                end
+
+                text_fn( font.data, segment_pos, segment.color, segment.text )
+                
+                local size = measure_text( font, segment.text )
+                current_x = current_x + size.x
+            end
+        end
+    end
+
+    local function poly( points, color, rounding )
+        poly_fn( ffi.new( 'vec2_t[?]', #points, points ), #points, color )
+    end
+
+    local function poly_line( points, color, thick, flags )
+        thick = thick or 1
+        flags = flags or 0
+
+        poly_line_fn( ffi.new( 'vec2_t[?]', #points, points ), #points, color, thick, flags )
+    end
+
+    local function poly_shadow( points, color, thick, offset, flags )
+        thick = thick or 10
+        offset = offset or vec2_t( )
+        flags = flags or 0
+
+        poly_shadow_fn( ffi.new( 'vec2_t[?]', #points, points ), #points, color, thick, offset, flags )
+    end
+
+    local function circle( pos, color, radius, segments )
+        segments = segments or 0
+
+        circle_fn( pos, color, radius, segments )
+    end
+
+    local function circle_outline( pos, color, radius, thick, segments )
+        thick = thick or 1
+        segments = segments or 0
+        
+        circle_outline_fn( pos, color, radius, thick, segments )
+    end
+    
+    local function circle_shadow( pos, color, radius, thick, offset, flags, segments )
+        thick = thick or 10
+        offset = offset or vec2_t( )
+        flags = flags or 0
+        segments = segments or 0
+        
+        circle_shadow_fn( pos, color, radius, thick, offset, flags, segments )
+    end
+
+    local function circle_gradient( pos, color_in, color_out, radius )
+        circle_gradient_fn( pos, color_in, color_out, radius )
+    end
+
+    local function texture( texture_data, pos, size, color, rounding, flags )
+        rounding = rounding or 0
+        flags = flags or 0
+
+        if texture_data.texture == nil then
+            return
+        end
+
+        texture_fn( texture_data, pos, size, color, rounding, flags )
+    end
+    
+    local function gradient( pos, size, top_left, top_right, bottom_left, bottom_right, rounding, flags )
+        rounding = rounding or 0
+        flags = flags or 0
+
+        gradient_fn( pos, size, top_left, top_right, bottom_left, bottom_right, rounding, flags )
+    end
+
+    local function rect( pos, size, color, rounding, flags )
+        rounding = rounding or 0
+        flags = flags or 0
+
+        rect_fn( pos, size, color, rounding, flags )
+    end
+
+    local function rect_outline( pos, size, color, thick, rounding, flags )
+        thick = thick or 1
+        rounding = rounding or 0
+        flags = flags or 0
+
+        rect_outline_fn( pos, size, color, thick, rounding, flags )
+    end
+
+    local function rect_blur( pos, size, color, rounding, flags )
+        rounding = rounding or 0
+        flags = flags or 0
+
+        push_mask( false, color.a )
+            rect( pos, size, col_t( ), rounding, flags )
+        begin_mask_content_fn( )
+            push_blur_fn( color )
+                rect( pos, size, col_t( ) )
+            pop_blur_fn( )
+        pop_mask_fn( )
+    end
+
+    local function rect_shadow( pos, size, color, thick, offset, rounding, flags  )
+        thick = thick or 10
+        offset = offset or vec2_t( )
+        rounding = rounding or 0
+        flags = flags or 0
+
+        rect_shadow_fn( pos, size, color, thick, offset, rounding, flags )
+    end
+
+    local function handle_render( )
+        if not is_render_init_fn( ) then
+            print( 'init error' )
+            return
+        end
+        
+        client.fire_event( 'render' )
+
+        local status, message = pcall( update_buffer_fn )
+        if not status then
+            error( message, 1 )
+        end
+    end
+    
+    local function shutdown_render( )
         libapi.free_lib( handle )
-        collectgarbage( 'collect' )
-    end; defer( shutdown )
-    client.set_event_callback( 'shutdown', shutdown )
+        collectgarbage( 'collect' ) 
+    end
+
+    client.set_event_callback( 'shutdown', shutdown_render )
+    client.set_event_callback( 'paint_ui', handle_render )
 
     return {
+        load_texture_svg = load_texture_svg,
+        load_texture_file = load_texture_file,
+        load_texture_memory = load_texture_memory,
         load_font = load_font,
-        load_image = load_image,
         
-        get_text_size = get_text_size,
+        measure_text = measure_text,
+        text = text,
 
-        add_image = add_image,
-        add_rect_filled = add_rect_filled,
-        add_rect = add_rect,
-        add_rect_shadow = add_rect_shadow,
-        add_rect_gradient = add_rect_gradient,
-        add_blur = add_blur,
-        add_text = add_text,
-        add_polyline = add_polyline,
-        add_polyfilled = add_polyfilled,
-        add_polyshadow = add_polyshadow,
-        add_line = add_line,
-        add_circle = add_circle,
-        add_circle_filled = add_circle_filled,
-        add_circle_shadow = add_circle_shadow,
+        push_mask = push_mask,
+        pop_mask = pop_mask_fn,
+        begin_mask_content = begin_mask_content_fn,
 
-        push_clip_rect = push_clip_rect,
-        pop_clip_rect = pop_clip_rect,
-        push_rotation = push_rotation,
-        pop_rotation = pop_rotation,
+        push_blur = push_blur_fn,
+        pop_blur = pop_blur_fn,
 
-        set_callback = set_callback,
+        poly = poly,
+        poly_line = poly_line,
+        poly_shadow = poly_shadow,
+
+        circle = circle,
+        circle_outline = circle_outline,
+        circle_shadow = circle_shadow,
+        circle_gradient = circle_gradient,
+
+        rect = rect,
+        rect_outline = rect_outline,
+        rect_blur = rect_blur,
+        rect_shadow = rect_shadow,
+        gradient = gradient,
+
+        texture = texture,
 
         vec2_t = vec2_t,
         col_t = col_t,
 
         draw_flags = draw_flags,
         font_flags = font_flags,
+        rounded_points = rounded_points,
 
-        libapi = libapi
+        handle = handle,
+        utils = utils
     }
 end
 
-return render
+return render_impl
 --@endregion
