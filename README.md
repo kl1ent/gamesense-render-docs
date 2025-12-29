@@ -44,6 +44,9 @@ end)
   - [poly](#poly)
   - [poly_line](#poly_line)
   - [poly_shadow](#poly_shadow)
+- [✂️ Clipping](#-clipping)
+  - [push_clip_rect](#push_clip_rect)
+  - [pop_clip_rect](#pop_clip_rect)
 - [🧼 Mask](#-mask)
   - [push_mask](#push_mask)
   - [begin_mask_content](#begin_mask_content)
@@ -767,6 +770,40 @@ Draws a polygon/polyline shadow.
 
 ---
 
+## ✂️ Clipping
+
+### 📌 Description
+
+Clipping restricts drawing to a rectangular region. Unlike mask which uses custom shapes, clipping only works with rectangles but is more efficient.
+
+---
+
+### push_clip_rect
+
+```lua
+render.push_clip_rect(pos: vec2_t, size: vec2_t, intersect?: boolean)
+```
+
+Starts recording the mask shape.
+
+| Argument | Type | Default | Description |
+|---|---|---:|---|
+| `pos` | `vec2_t` | — | Top-left position of clipping rectangle |
+| `size` | `vec2_t` | — | Size of clipping rectangle |
+| `intersect` | `boolean` | `true` | If `true`, intersect with previous clip; if `false`, replace |
+
+---
+
+### pop_clip_rect
+
+```lua
+render.pop_clip_rect()
+```
+
+Pops the current clipping rectangle from the stack.
+
+---
+
 ## 🧼 Mask
 
 ### 📌 Description
@@ -797,10 +834,6 @@ render.begin_mask_content()
 ```
 
 Switches to drawing content **inside** the mask.
-
-| Argument | Type | Description |
-|---|---|---|
-| — | — | No arguments |
 
 ---
 
